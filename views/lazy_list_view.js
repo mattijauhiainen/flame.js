@@ -119,12 +119,12 @@ Flame.LazyListView = Flame.ListView.extend({
         var i;
         if (min === range.end) min++;
         for (i = range.start; i < min; i++) {
-            this.viewForRow(i);
+            this.viewForRow(i).rerender();
         }
         // Fill up empty gap on bottom
         if (max !== range.start) {
             for (i = range.end; i > max; i--) {
-                this.viewForRow(i);
+                this.viewForRow(i).rerender();
             }
         }
     },
