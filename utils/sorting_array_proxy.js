@@ -17,7 +17,9 @@
 
   Note that we don't keep the indexes stricly sequential, we only care about their relative order
   (in other words, there may be gaps after removal). This is to prevent unnecessary datastore
-  updates.
+  updates. The sortkeys are preserved, if you create a proxied array with source that has sorkeys
+  [1, 3, 5], and then swap items, the resulting source will still only use the [1, 3, 5] as sortkeys
+  instead of e.g. [1, 2, 3].
 
   (Why give the source as 'source', not 'content', as is customary? Because it seems that then would
   need to re-implement all methods needed for array proxying, whereas with this approach we can just
@@ -73,12 +75,11 @@ Flame.SortingArrayProxy = Ember.ArrayProxy.extend({
     endMoving: function() {
         this._suppressObservers = false;
 
+        var self = this;
         var content = this.get('content');
         var sortKey = this.get('sortKey');
         this._withObserversSuppressed(function() {
-            content.forEach(function(item, i) {
-                Ember.setPath(item, sortKey, i);
-            });
+            self._reAssignSortKeys(content, sortKey);
         });
     },
 
@@ -124,7 +125,7 @@ Flame.SortingArrayProxy = Ember.ArrayProxy.extend({
         // situations (reloading, and setting child values), so we check if the sort key really changed, so
         // we don't do unnecessary work
         item.lastPosition = item.get(sortKey);
-        var observer = function() { 
+        var observer = function() {
             this._indexChanged(item);
         };
         Ember.addObserver(item, sortKey, this, observer);
@@ -215,10 +216,7 @@ Flame.SortingArrayProxy = Ember.ArrayProxy.extend({
             var source = this.get('source');
             var self = this;
             this._withObserversSuppressed(function() {
-                content.forEach(function(item, i) {
-                    Ember.setPath(item, sortKey, i);
-                });
-
+                self._reAssignSortKeys(content, sortKey);
                 for (var i = start; i < start + addCount; i++) {
                     var addedItem = content.objectAt(i);
                     self._addSortIndexObserverAndRegisterForRemoval(addedItem);
@@ -226,6 +224,26 @@ Flame.SortingArrayProxy = Ember.ArrayProxy.extend({
                 }
             });
         }
+    },
+
+    _reAssignSortKeys: function(content, sortKey) {
+        // Preserve the original sort keys. If there are new items without sortKeys,
+        // use the previous items key, or zero in case its the first item
+        var keys = [];
+        content.mapProperty(sortKey).forEach(function(key, index) {
+            if (key === undefined && index === 0) keys.push(0);
+            else if (key === undefined) keys.push(keys[index - 1]);
+            else keys.push(key);
+        });
+
+        keys.sort(function(key1, key2) {
+            return Ember.compare(key1, key2);
+        });
+
+        // Assign the updated ordering with old sort keys
+        content.forEach(function(item, i) {
+            Ember.setPath(item, sortKey, keys[i]);
+        });
     },
 
     // TODO might be useful to make the replacing more fine-grained?
