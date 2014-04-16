@@ -35,9 +35,13 @@ Flame.Panel = Flame.RootView.extend({
     titleView: Flame.View.extend(Flame.Statechart, {
         layout: { left: 0, right: 0, height: 26, bottomPadding: 1 },
         classNames: ['flame-panel-title'],
-        childViews: ['labelView'],
+        childViews: ['headerView'],
         isVisible: Flame.computed.notEquals('parentView.title', null),
         initialState: 'idle',
+
+        headerView: function() {
+            return this.getPath('parentView.headerView') || this.get('labelView');
+        }.property('parentView.headerView'),
 
         labelView: Flame.LabelView.extend({
             layout: { left: 4, right: 4, top: 2 },
