@@ -1,7 +1,7 @@
 Flame.ButtonView = Flame.View.extend(Flame.ActionSupport, Flame.Statechart, {
     defaultHeight: 24,
-    classNames: ['flame-button-view'],
-    classNameBindings: ['isHovered', 'isActive', 'isSelected', 'isDisabled', 'isDefault', 'isFocused'],
+    // classNames: ['flame-button-view'],
+    classNameBindings: ['foo', 'isHovered', 'isActive', 'isSelected', 'isDisabled', 'isDefault', 'isFocused'],
     acceptsKeyResponder: true,
     isHovered: false,
     isActive: false,
@@ -21,6 +21,12 @@ Flame.ButtonView = Flame.View.extend(Flame.ActionSupport, Flame.Statechart, {
         }
         this._super(buffer);
     },
+
+
+    foo: function() {
+        if (Ember.isNone(this.get('customClassNames'))) return 'flame-button-view';
+        return this.get('customClassNames');
+    }.property('customClassNames'),
 
     insertSpace: function(event) {
         this.simulateClick();
