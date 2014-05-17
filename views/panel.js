@@ -48,7 +48,7 @@ Flame.Panel = Flame.RootView.extend({
         childViews: ['headerView'],
 
         headerView: function() {
-            return this.getPath('parentView.headerView') || this.get('labelView');
+            return this.get('parentView.headerView') || this.get('labelView');
         }.property('parentView.headerView'),
 
         labelView: Flame.LabelView.extend({
