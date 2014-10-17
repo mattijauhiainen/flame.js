@@ -190,16 +190,26 @@ Flame.EventManager = {
         },
 
         mouseUp: function(event, view) {
-            if (Flame.get('mouseResponderView') !== undefined) {
-                view = Flame.get('mouseResponderView');
+            var mouseResponderView = Flame.get('mouseResponderView');
+            if (mouseResponderView !== undefined) {
+                // Something (e.g. AJAX callback) may remove the responderView from DOM between mouseDown
+                // and mouseUp
+                if (mouseResponderView.get('_state') === 'inDOM') view = mouseResponderView;
                 Flame.set('mouseResponderView', undefined);
             }
             return !this._dispatch('mouseUp', event, view);
         },
 
         mouseMove: function(event, view) {
-            if (Flame.get('mouseResponderView') !== undefined) {
-                view = Flame.get('mouseResponderView');
+            var mouseResponderView = Flame.get('mouseResponderView');
+            if (mouseResponderView !== undefined) {
+                // Something (e.g. AJAX callback) may remove the responderView from DOM between mouseDown
+                // and/or mouseMove
+                if (mouseResponderView.get('_state') === 'inDOM') {
+                    view = mouseResponderView;
+                } else {
+                    Flame.set('mouseResponderView', undefined);
+                }
             }
             return !this._dispatch('mouseMove', event, view);
         },
