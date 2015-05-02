@@ -204,9 +204,9 @@ Flame.LazyListView = Flame.ListView.extend({
       @returns {Flame.ItemView} A fully instantiated view that renders the given row.
     */
     viewForRow: function(row, attributes) {
-        var itemHeight = this.itemHeightForRow(row);
         var item = this.itemForRow(row);
         var viewClass = this.viewClassForItem(item);
+        var itemHeight = this.itemHeightForRow(row, item, viewClass);
         var itemClass = item.constructor.toString();
         var view = (this._recycledViews[itemClass] && this._recycledViews[itemClass].pop());
         if (!view) {
@@ -219,11 +219,38 @@ Flame.LazyListView = Flame.ListView.extend({
         }
         view.set('content', item);
         view.set('contentIndex', row);
-        view.layout.top = row * itemHeight;
+        // view.layout.top = row * itemHeight;
+
+        var t = this.calcTop(view, item);
+        console.warn(t, view.get('content.label'));
+        view.layout.top =  t;
         view.propertyDidChange('layout');
         view.set('isVisible', true);
         view.endPropertyChanges();
         return view;
+    },
+
+    calcTop: function(viewForTop, item) {
+        var itemTop = 0;
+        var self = this;
+        var foundTop = false;
+        this.toArray().sort(function(view1, view2) {
+            var row1 = self.rowForItem(view1.get('content')),
+                row2 = self.rowForItem(view2.get('content'));
+
+            return row1 > row2;
+        }).forEach(function(view) {
+            // var contentIndex = view.get('contentIndex');
+            var content = view.get('content');
+            var row = this.rowForItem(content);
+            if (view.get('content') === viewForTop.get('content')) {
+                foundTop = true;
+                return;
+            }
+            itemTop += this.itemHeightForRow(row, item, view);
+        }, this);
+        // TODO: This is broken, should only account for views before this for top, not itself...
+        return foundTop ? itemTop : 0;
     },
 
     _hideRecycledViews: function() {
@@ -277,7 +304,7 @@ Flame.LazyListView = Flame.ListView.extend({
         }
     },
 
-    itemHeightForRow: function(index) {
+    itemHeightForRow: function(index, item, view) {
         return this.get('itemHeight');
     },
 

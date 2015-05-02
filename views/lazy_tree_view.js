@@ -70,6 +70,7 @@ Flame.LazyTreeView = Flame.LazyListView.extend({
     },
 
     viewClassForItem: function(item) {
+        console.log(item.constructor.toString());
         var itemViewClasses = this.get('itemViewClasses');
         return itemViewClasses[item.constructor.toString()];
     },
@@ -171,14 +172,15 @@ Flame.LazyTreeView = Flame.LazyListView.extend({
             var contentIndex = view.get('contentIndex');
             var content = view.get('content');
             var row = this.rowForItem(content);
+            // console.log('Item: ' + content.get('label') + ', row: ' + row);
             if (typeof row === 'undefined' && typeof contentIndex !== 'undefined') {
                 this._recycleView(view);
             } else if (typeof contentIndex !== 'undefined') {
                 indices.push(row);
                 if (contentIndex !== row) {
                     view.set('contentIndex', row);
-                    var itemHeight = this.itemHeightForRow(row);
-                    view.$().css('top', row * itemHeight + 'px');
+                    // var itemHeight = this.itemHeightForRow(row, item, view);
+                    // view.$().css('top', row * itemHeight + 'px'); // TODO: This assumes all rows are equal height???????????
                 }
                 if (row < range.start || row > range.end) {
                     this._recycleView(view);
@@ -192,7 +194,32 @@ Flame.LazyTreeView = Flame.LazyListView.extend({
                 this.viewForRow(i);
             }
         }
+
         this._hideRecycledViews();
+
+        var self = this;
+        // this.forEach(function(view) {
+        var itemTop = 0;
+        this.toArray().sort(function(view1, view2) {
+            var row1 = self.rowForItem(view1.get('content')),
+                row2 = self.rowForItem(view2.get('content'));
+
+            return row1 > row2;
+        }).forEach(function(view) {
+            var contentIndex = view.get('contentIndex');
+            var content = view.get('content');
+            var row = this.rowForItem(content);
+            // var itemHeight = this.itemHeightForRow(row, item, view);
+            itemTop += this.itemHeightForRow(row, item, view);
+            if (typeof contentIndex !== 'undefined') {
+                console.log('Top: ' + content.get('label') + ', ' + itemTop + ', contentIndex: ' + contentIndex);
+                Ember.run.scheduleOnce('afterRender', this, this.updateTop, itemTop, view);
+            }
+        }, this);
+    },
+
+    updateTop: function(itemTop, view) {
+        view.$().css('top', itemTop + 'px');
     },
 
     moveRight: function() {
